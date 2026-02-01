@@ -12,130 +12,22 @@
             box-sizing: border-box;
         }
 
+        html,
         body {
-            font-family: Arial, sans-serif;
-            background: #2c2c2c;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            height: 100%;
+            overflow: hidden;
         }
 
-        #loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 20px;
-        }
-
-        #pdf-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .pdf-page {
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-            background: white;
-        }
-
-        #error {
-            color: white;
-            text-align: center;
-            padding: 50px;
-            display: none;
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
 
 <body>
-    <div id="loading">Loading PDF...</div>
-    <div id="error"></div>
-    <div id="pdf-container"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-        const container = document.getElementById('pdf-container');
-        const loading = document.getElementById('loading');
-        const errorDiv = document.getElementById('error');
-
-        const pdfPath = 'https://lokodata.github.io/resume/2026%20Resume%20-%20John%20Mark%20A.%20Pachico.pdf';
-
-        async function loadPDF() {
-            try {
-                // Use XMLHttpRequest to load PDF as arraybuffer to prevent download
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', pdfPath, true);
-                xhr.responseType = 'arraybuffer';
-
-                xhr.onload = async function() {
-                    if (xhr.status === 200) {
-                        try {
-                            const loadingTask = pdfjsLib.getDocument({ data: xhr.response });
-                            const pdf = await loadingTask.promise;
-                            loading.style.display = 'none';
-
-                            // Render all pages
-                            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                                const page = await pdf.getPage(pageNum);
-                                const scale = 1.5;
-                                const viewport = page.getViewport({ scale: scale });
-
-                                const canvas = document.createElement('canvas');
-                                canvas.className = 'pdf-page';
-                                const context = canvas.getContext('2d');
-                                canvas.height = viewport.height;
-                                canvas.width = viewport.width;
-
-                                const renderContext = {
-                                    canvasContext: context,
-                                    viewport: viewport
-                                };
-
-                                await page.render(renderContext).promise;
-                                container.appendChild(canvas);
-                            }
-                        } catch (error) {
-                            throw new Error('Failed to render PDF: ' + error.message);
-                        }
-                    } else {
-                        throw new Error('Failed to load PDF file (HTTP ' + xhr.status + ')');
-                    }
-                };
-
-                xhr.onerror = function() {
-                    loading.style.display = 'none';
-                    errorDiv.style.display = 'block';
-                    errorDiv.innerHTML = `
-                        <h2>Unable to load PDF</h2>
-                        <p>Network error occurred while loading the PDF.</p>
-                        <p>Make sure both files are in the same directory and properly deployed.</p>
-                    `;
-                };
-
-                xhr.send();
-            } catch (error) {
-                console.error('Error loading PDF:', error);
-                loading.style.display = 'none';
-                errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `
-                    <h2>Unable to load PDF</h2>
-                    <p>${error.message}</p>
-                    <p>Please ensure the PDF file is in the same directory as this HTML file.</p>
-                `;
-            }
-        }
-
-        loadPDF();
-    </script>
+    <iframe src="https://docs.google.com/viewer?url=https://lokodata.github.io/resume/2026%20Resume%20-%20John%20Mark%20A.%20Pachico.pdf&embedded=true"></iframe>
 </body>
 
 </html>
