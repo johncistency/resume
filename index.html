@@ -67,35 +67,61 @@
         const loading = document.getElementById('loading');
         const errorDiv = document.getElementById('error');
 
-        // Get the PDF file path - works for both local and GitHub Pages
-        const pdfPath = '2026 Resume - John Mark A. Pachico.pdf';
+        const pdfPath = 'https://lokodata.github.io/resume/2026%20Resume%20-%20John%20Mark%20A.%20Pachico.pdf';
 
         async function loadPDF() {
             try {
-                const loadingTask = pdfjsLib.getDocument(pdfPath);
-                const pdf = await loadingTask.promise;
-                loading.style.display = 'none';
+                // Use XMLHttpRequest to load PDF as arraybuffer to prevent download
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', pdfPath, true);
+                xhr.responseType = 'arraybuffer';
 
-                // Render all pages
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const scale = 1.5;
-                    const viewport = page.getViewport({ scale: scale });
+                xhr.onload = async function() {
+                    if (xhr.status === 200) {
+                        try {
+                            const loadingTask = pdfjsLib.getDocument({ data: xhr.response });
+                            const pdf = await loadingTask.promise;
+                            loading.style.display = 'none';
 
-                    const canvas = document.createElement('canvas');
-                    canvas.className = 'pdf-page';
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
+                            // Render all pages
+                            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                                const page = await pdf.getPage(pageNum);
+                                const scale = 1.5;
+                                const viewport = page.getViewport({ scale: scale });
 
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: viewport
-                    };
+                                const canvas = document.createElement('canvas');
+                                canvas.className = 'pdf-page';
+                                const context = canvas.getContext('2d');
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
 
-                    await page.render(renderContext).promise;
-                    container.appendChild(canvas);
-                }
+                                const renderContext = {
+                                    canvasContext: context,
+                                    viewport: viewport
+                                };
+
+                                await page.render(renderContext).promise;
+                                container.appendChild(canvas);
+                            }
+                        } catch (error) {
+                            throw new Error('Failed to render PDF: ' + error.message);
+                        }
+                    } else {
+                        throw new Error('Failed to load PDF file (HTTP ' + xhr.status + ')');
+                    }
+                };
+
+                xhr.onerror = function() {
+                    loading.style.display = 'none';
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = `
+                        <h2>Unable to load PDF</h2>
+                        <p>Network error occurred while loading the PDF.</p>
+                        <p>Make sure both files are in the same directory and properly deployed.</p>
+                    `;
+                };
+
+                xhr.send();
             } catch (error) {
                 console.error('Error loading PDF:', error);
                 loading.style.display = 'none';
@@ -104,7 +130,6 @@
                     <h2>Unable to load PDF</h2>
                     <p>${error.message}</p>
                     <p>Please ensure the PDF file is in the same directory as this HTML file.</p>
-                    <p><a href="${pdfPath}" style="color: #4CAF50;">Download PDF instead</a></p>
                 `;
             }
         }
